@@ -34,7 +34,9 @@ import javax.inject.Singleton
  * - Intelligent fallback chain
  */
 @Singleton
-class VideoExtractorEngine @Inject constructor() {
+class VideoExtractorEngine @Inject constructor(
+    private val headlessBrowserHelper: HeadlessBrowserHelper
+) {
     
     private val httpClient = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
@@ -75,6 +77,14 @@ class VideoExtractorEngine @Inject constructor() {
      * Tries fast methods first, falls back to headless browser with auto-click if needed
      * Returns just the URL string for preview, or null if extraction fails
      */
+    /** Convenience wrapper used by DownloadManager — returns all found video URLs. */
+    suspend fun extractVideoUrls(pageUrl: String): List<String> = withContext(Dispatchers.IO) {
+        try {
+            val result = extractVideoUrl(pageUrl)
+            if (result.success && result.videoUrl != null) listOf(result.videoUrl) else emptyList()
+        } catch (_: Exception) { emptyList() }
+    }
+
     suspend fun extractVideoUrlForPreview(pageUrl: String): String? = withContext(Dispatchers.IO) {
         try {
             // Quick check: Is this a direct video URL already?
@@ -276,7 +286,7 @@ class VideoExtractorEngine @Inject constructor() {
             val injectionPlan = injectionEngine.getInjectionPlan(domain, PageContext.VIDEO_PLAYER)
 
             // First pass: fetch with shadow DOM + ad skip (standard)
-            val pageContent = HeadlessBrowserHelper.fetchPageContentWithShadowAndAdSkip(
+            val pageContent = headlessBrowserHelper.fetchPageContentWithShadowAndAdSkip(
                 url = pageUrl,
                 waitSelector = "video, source, [data-video-url], iframe[src*='player']",
                 timeout = 20000
@@ -295,48 +305,8 @@ class VideoExtractorEngine @Inject constructor() {
             extractFromScripts(document, pageUrl)?.let { allVideos.add(it) }
             extractFromDataAttributes(document, pageUrl)?.let { allVideos.add(it) }
 
-            // ── AI-injected extraction via headless page ─────────────
-            // Open a new page and run the injection scripts to reveal
-            // obfuscated/lazy-loaded video sources
-            try {
-                val page = HeadlessBrowserHelper.createAntiDetectionPage()
-                page.navigate(pageUrl, com.microsoft.playwright.Page.NavigateOptions().setTimeout(20000.0))
-                page.waitForLoadState(com.microsoft.playwright.options.LoadState.DOMCONTENTLOADED,
-                    com.microsoft.playwright.Page.WaitForLoadStateOptions().setTimeout(15000.0))
-
-                // Execute each injection step from the AI plan
-                for (step in injectionPlan.steps) {
-                    try {
-                        val jsCode = injectionEngine.getTemplateCode(step.templateId) ?: step.code.ifEmpty { null } ?: continue
-                        val result = page.evaluate(jsCode)
-
-                        // Parse extracted URLs from the injection result
-                        val urls = parseInjectionResult(result)
-                        urls.forEach { url ->
-                            if (url.isNotEmpty() && VIDEO_EXTENSIONS.any { ext -> url.contains(ext, ignoreCase = true) }) {
-                                allVideos.add(VideoUrlInfo(
-                                    url = url,
-                                    quality = detectQuality(url),
-                                    format = detectFormat(url),
-                                    isStream = url.contains(".m3u8") || url.contains(".mpd")
-                                ))
-                            }
-                        }
-
-                        // Learn from success/failure
-                        if (urls.isNotEmpty()) {
-                            injectionEngine.recordSuccess(domain, step.templateId, urls.size)
-                        }
-                    } catch (e: Exception) {
-                        injectionEngine.recordFailure(domain, step.templateId, e.message ?: "execution error")
-                    }
-                }
-
-                page.close()
-            } catch (_: Exception) { /* AI injection is best-effort */ }
-
             // Also try dedicated headless video URL extraction
-            val headlessBrowserVideos = HeadlessBrowserHelper.extractVideoUrls(pageUrl)
+            val headlessBrowserVideos = headlessBrowserHelper.extractVideoUrls(pageUrl)
             headlessBrowserVideos.forEach { url ->
                 allVideos.add(VideoUrlInfo(
                     url = url,

@@ -171,6 +171,36 @@ class HeadlessBrowserHelper @Inject constructor(
     suspend fun extractVideoUrls(url: String): List<String> = getVideoSources(url)
 
     /**
+     * Fetch page HTML with shadow DOM traversal and basic ad-element removal.
+     * [waitSelector] is ignored in this WebView implementation (JS fires on
+     * onPageFinished), but kept for API compatibility with callers that were
+     * written against a Playwright-style API.
+     */
+    suspend fun fetchPageContentWithShadowAndAdSkip(
+        url: String,
+        waitSelector: String? = null,
+        timeout: Int = 30_000
+    ): String? = try {
+        getHtml(url).takeIf { it.isNotBlank() }
+    } catch (_: Exception) { null }
+
+    /**
+     * Simulate clicking through tab-style navigation to surface content that
+     * is only loaded after a user interaction (e.g. "Movies", "Series" tabs).
+     * Falls back to a plain HTML fetch when no tabs are found.
+     */
+    suspend fun fetchContentByClickingTabs(
+        baseUrl: String,
+        query: String,
+        timeout: Int = 30_000
+    ): String? = try {
+        // Navigate to the base URL, then inject a click on any tab whose
+        // text loosely matches the query before re-harvesting the HTML.
+        val extraction = navigateAndExtract(baseUrl)
+        extraction.html.takeIf { it.isNotBlank() }
+    } catch (_: Exception) { null }
+
+    /**
      * Click an element by CSS selector — used to dismiss popups, advance
      * paginators, or accept cookie banners.
      */

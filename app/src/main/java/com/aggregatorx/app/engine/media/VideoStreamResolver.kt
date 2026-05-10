@@ -33,7 +33,8 @@ import javax.inject.Singleton
 @Singleton
 class VideoStreamResolver @Inject constructor(
     private val proxyVPNEngine: ProxyVPNEngine,
-    private val videoExtractorEngine: VideoExtractorEngine
+    private val videoExtractorEngine: VideoExtractorEngine,
+    private val headlessBrowserHelper: HeadlessBrowserHelper
 ) {
     
     companion object {
@@ -198,7 +199,7 @@ class VideoStreamResolver @Inject constructor(
     private suspend fun resolveWithHeadlessBrowser(pageUrl: String): VideoStreamResult = withContext(Dispatchers.IO) {
         try {
             // Use headless browser with ad skip and shadow DOM support
-            val pageContent = HeadlessBrowserHelper.fetchPageContentWithShadowAndAdSkip(
+            val pageContent = headlessBrowserHelper.fetchPageContentWithShadowAndAdSkip(
                 url = pageUrl,
                 waitSelector = "video, source, [data-video-url], iframe[src*='player']",
                 timeout = 25000
@@ -216,7 +217,7 @@ class VideoStreamResolver @Inject constructor(
             
             // Also try extracting video URLs captured by headless browser
             if (videoUrl == null) {
-                val capturedVideos = HeadlessBrowserHelper.extractVideoUrls(pageUrl)
+                val capturedVideos = headlessBrowserHelper.extractVideoUrls(pageUrl)
                 val bestVideo = capturedVideos.maxByOrNull { url ->
                     when {
                         url.contains("1080") -> 100

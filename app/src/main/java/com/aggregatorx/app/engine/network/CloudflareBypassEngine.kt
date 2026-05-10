@@ -4,6 +4,8 @@ import com.aggregatorx.app.data.database.AuditLogDao
 import com.aggregatorx.app.data.model.AuditLogEntity
 import com.aggregatorx.app.engine.scraper.HeadlessBrowserHelper
 import kotlinx.coroutines.delay
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
 import java.net.InetSocketAddress
 import java.net.Proxy
 import javax.inject.Inject
@@ -64,6 +66,26 @@ class CloudflareBypassEngine @Inject constructor(
         // In a full implementation, this pulls from a list of SOCKS5/HTTP proxies
         // Logic for LLM to decide retry strategy can be injected here
         return Proxy.NO_PROXY 
+    }
+
+    /**
+     * Fetch a URL and return a parsed Jsoup [Document]. Tries the headless
+     * WebView first (handles JS challenges); falls back to a plain Jsoup
+     * connection if the WebView path fails.
+     */
+    suspend fun fetchJsoupDocument(url: String, timeoutMs: Int = 30_000): Document? {
+        return try {
+            val html = resolve(url)
+            if (html.isNotBlank()) Jsoup.parse(html, url) else null
+        } catch (_: Exception) {
+            try {
+                Jsoup.connect(url)
+                    .userAgent(userAgents.random())
+                    .timeout(timeoutMs)
+                    .ignoreHttpErrors(true)
+                    .get()
+            } catch (_: Exception) { null }
+        }
     }
 
     private suspend fun logAction(type: String, details: String) {

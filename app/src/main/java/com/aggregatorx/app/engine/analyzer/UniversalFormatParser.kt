@@ -274,11 +274,11 @@ class UniversalFormatParser @Inject constructor() {
         return null
     }
 
-    private fun mapSchemaToContentType(type: String?): ContentType = when (type) {
-        "Movie" -> ContentType.MOVIE
-        "TVSeries" -> ContentType.SERIES
-        "TVEpisode" -> ContentType.EPISODE
-        else -> ContentType.VIDEO
+    private fun mapSchemaToContentType(type: String?): ParsedContentType = when (type) {
+        "Movie" -> ParsedContentType.MOVIE
+        "TVSeries" -> ParsedContentType.SERIES
+        "TVEpisode" -> ParsedContentType.EPISODE
+        else -> ParsedContentType.VIDEO
     }
 
     private fun deduplicateResults(results: List<ExtractedContent>): List<ExtractedContent> {
@@ -302,7 +302,7 @@ enum class DataFormat {
 }
 
 @Serializable
-enum class ContentType {
+enum class ParsedContentType {
     VIDEO, MOVIE, SERIES, EPISODE
 }
 
@@ -327,6 +327,6 @@ data class ExtractedContent(
     val year: String? = null,
     val rating: String? = null,
     val quality: String? = null,
-    val contentType: ContentType = ContentType.VIDEO,
+    val contentType: ParsedContentType = ParsedContentType.VIDEO,
     val confidence: Float = 0.5f
 )

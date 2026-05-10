@@ -471,8 +471,8 @@ class SmartContentClassifier @Inject constructor() {
     /**
      * Extract actual result items from a content container
      */
-    private fun extractResultItems(container: Element): List<ResultItem> {
-        val items = mutableListOf<ResultItem>()
+    private fun extractResultItems(container: Element): List<ClassifierResultItem> {
+        val items = mutableListOf<ClassifierResultItem>()
         
         // Try common item selectors
         val itemSelectors = listOf(
@@ -505,7 +505,7 @@ class SmartContentClassifier @Inject constructor() {
     /**
      * Extract a single result item from an element
      */
-    private fun extractResultFromElement(element: Element): ResultItem? {
+    private fun extractResultFromElement(element: Element): ClassifierResultItem? {
         // Find the main link
         val mainLink = element.select("a").maxByOrNull { it.text().length } ?: return null
         val href = mainLink.attr("href")
@@ -539,7 +539,7 @@ class SmartContentClassifier @Inject constructor() {
             .firstOrNull()?.text()
             ?.let { Regex("\\d+\\.?\\d*").find(it)?.value }
         
-        return ResultItem(
+        return ClassifierResultItem(
             title = title.trim(),
             url = href,
             thumbnail = thumbnail,
@@ -554,15 +554,15 @@ class SmartContentClassifier @Inject constructor() {
     /**
      * Determine if content is movie, series, episode, etc.
      */
-    private fun determineContentType(element: Element, url: String): ContentType {
+    private fun determineContentType(element: Element, url: String): ClassifierContentType {
         val text = "${element.text()} $url".lowercase()
         
         return when {
-            text.contains("episode") || text.contains("s\\d+e\\d+".toRegex()) -> ContentType.EPISODE
-            text.contains("season") || text.contains("series") -> ContentType.SERIES
-            text.contains("movie") || text.contains("film") -> ContentType.MOVIE
-            text.contains("trailer") -> ContentType.TRAILER
-            else -> ContentType.VIDEO
+            text.contains("episode") || text.contains("s\\d+e\\d+".toRegex()) -> ClassifierContentType.EPISODE
+            text.contains("season") || text.contains("series") -> ClassifierContentType.SERIES
+            text.contains("movie") || text.contains("film") -> ClassifierContentType.MOVIE
+            text.contains("trailer") -> ClassifierContentType.TRAILER
+            else -> ClassifierContentType.VIDEO
         }
     }
     
@@ -595,7 +595,7 @@ data class PageClassification(
     val categoryContainers: List<ClassifiedContainer>,
     val adContainers: List<ClassifiedContainer>,
     val pageType: PageType,
-    val resultItems: List<ResultItem>,
+    val resultItems: List<ClassifierResultItem>,
     val categoryItems: List<CategoryItem>
 ) {
     companion object {
@@ -641,7 +641,7 @@ enum class PageType {
     UNKNOWN
 }
 
-data class ResultItem(
+data class ClassifierResultItem(
     val title: String,
     val url: String,
     val thumbnail: String?,
@@ -649,10 +649,10 @@ data class ResultItem(
     val quality: String?,
     val year: String?,
     val rating: String?,
-    val type: ContentType
+    val type: ClassifierContentType
 )
 
-enum class ContentType {
+enum class ClassifierContentType {
     MOVIE,
     SERIES,
     EPISODE,

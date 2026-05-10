@@ -18,7 +18,9 @@ import javax.inject.Singleton
  * - API endpoint discovery via FallbackEngine itself
  */
 @Singleton
-class FallbackEngine @Inject constructor() {
+class FallbackEngine @Inject constructor(
+    private val headlessBrowserHelper: HeadlessBrowserHelper
+) {
 
     /**
      * Try all fallback strategies, then use headless browser as last resort
@@ -48,7 +50,7 @@ class FallbackEngine @Inject constructor() {
         } catch (_: Exception) {}
 
         // Headless with shadow DOM & ad skip
-        val content = HeadlessBrowserHelper.fetchPageContentWithShadowAndAdSkip(url, waitSelector, timeout)
+        val content = headlessBrowserHelper.fetchPageContentWithShadowAndAdSkip(url, waitSelector, timeout)
         onHeadless?.invoke(content ?: "")
         if (!content.isNullOrEmpty()) return content
 
@@ -59,7 +61,7 @@ class FallbackEngine @Inject constructor() {
                     val parts = it.split("/")
                     parts.take(3).joinToString("/")
                 }
-                val tabContent = HeadlessBrowserHelper.fetchContentByClickingTabs(baseUrl, query, timeout)
+                val tabContent = headlessBrowserHelper.fetchContentByClickingTabs(baseUrl, query, timeout)
                 if (!tabContent.isNullOrEmpty()) {
                     onHeadless?.invoke(tabContent)
                     return tabContent

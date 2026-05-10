@@ -29,6 +29,31 @@ val AccentRed = Color(0xFFFF5252)
 val AccentYellow = Color(0xFFFFD600)
 val AccentOrange = Color(0xFFFF9800)
 
+// ── AI / Feature accent ───────────────────────────────────────────
+val AIAccent = Color(0xFF7FE7CC)
+
+// ── Provider category colors ──────────────────────────────────────
+val CategoryStreaming = Color(0xFF00BCD4)
+val CategoryTorrent   = Color(0xFFFF7043)
+val CategoryNews      = Color(0xFF66BB6A)
+val CategoryMedia     = Color(0xFFAB47BC)
+val CategoryAPI       = Color(0xFF42A5F5)
+val CategoryGeneral   = Color(0xFF78909C)
+
+// ── Score / security helper functions ────────────────────────────
+fun getScoreColor(score: Float): Color = when {
+    score >= 80f -> AccentGreen
+    score >= 60f -> AccentYellow
+    score >= 40f -> AccentOrange
+    else         -> AccentRed
+}
+
+fun getSecurityColor(score: Float): Color = when {
+    score >= 80f -> AccentGreen
+    score >= 50f -> AccentYellow
+    else         -> AccentRed
+}
+
 private val DarkColorScheme = darkColorScheme(
     primary = CyberCyan,
     secondary = CyberBlue,

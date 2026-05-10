@@ -1,19 +1,14 @@
 package com.aggregatorx.app.data.model
 
-import androidx.room.Entity
-import androidx.room.ForeignKey
-import androidx.room.Index
-import androidx.room.PrimaryKey
 import kotlinx.serialization.Serializable
 import java.util.UUID
 
 /**
- * Provider - Represents a configured content provider/website
+ * Provider - UI/transfer model for a configured content provider/website.
+ * Persistence is handled by [ProviderEntity]; this class is used in ViewModels and UI.
  */
-@Entity(tableName = "providers")
 @Serializable
 data class Provider(
-    @PrimaryKey
     val id: String = UUID.randomUUID().toString(),
     val name: String,
     val url: String,
@@ -37,23 +32,11 @@ enum class ProviderCategory {
 }
 
 /**
- * Site Analysis Result - Complete analysis of a website's structure
+ * Site Analysis Result - Complete analysis of a website's structure.
+ * Not persisted in Room; passed between engine and UI layers in memory.
  */
-@Entity(
-    tableName = "site_analysis",
-    foreignKeys = [
-        ForeignKey(
-            entity = Provider::class,
-            parentColumns = ["id"],
-            childColumns = ["providerId"],
-            onDelete = ForeignKey.CASCADE
-        )
-    ],
-    indices = [Index(value = ["providerId"])]
-)
 @Serializable
 data class SiteAnalysis(
-    @PrimaryKey
     val id: String = UUID.randomUUID().toString(),
     val providerId: String,
     val url: String,
@@ -210,23 +193,11 @@ enum class PatternType {
 }
 
 /**
- * Scraping Configuration for a specific provider
+ * Scraping Configuration for a specific provider.
+ * Not persisted in Room; used as a transfer object between engine layers.
  */
-@Entity(
-    tableName = "scraping_configs",
-    foreignKeys = [
-        ForeignKey(
-            entity = Provider::class,
-            parentColumns = ["id"],
-            childColumns = ["providerId"],
-            onDelete = ForeignKey.CASCADE
-        )
-    ],
-    indices = [Index(value = ["providerId"])]
-)
 @Serializable
 data class ScrapingConfig(
-    @PrimaryKey
     val id: String = UUID.randomUUID().toString(),
     val providerId: String,
     val searchUrlTemplate: String,
@@ -253,10 +224,8 @@ data class ScrapingConfig(
     val rateLimitMs: Long = 500
 )
 
-@Entity(tableName = "search_history")
 @Serializable
 data class SearchHistoryEntry(
-    @PrimaryKey
     val id: String = UUID.randomUUID().toString(),
     val query: String,
     val timestamp: Long = System.currentTimeMillis(),
@@ -265,10 +234,8 @@ data class SearchHistoryEntry(
     val successfulProviders: Int = 0
 )
 
-@Entity(tableName = "user_preferences")
 @Serializable
 data class UserPreferences(
-    @PrimaryKey
     val id: Int = 1,
     val clickedCategories: String = "[]",
     val watchedGenres: String = "[]",
@@ -278,10 +245,8 @@ data class UserPreferences(
     val lastUpdated: Long = System.currentTimeMillis()
 )
 
-@Entity(tableName = "liked_results")
 @Serializable
 data class LikedResult(
-    @PrimaryKey
     val id: String = UUID.randomUUID().toString(),
     val title: String,
     val url: String,
@@ -297,10 +262,8 @@ data class LikedResult(
     val titleKeywords: String = "[]"
 )
 
-@Entity(tableName = "learned_profile")
 @Serializable
 data class LearnedUserProfile(
-    @PrimaryKey
     val id: Int = 1,
     val preferredKeywords: String = "",
     val preferredProviders: String = "",

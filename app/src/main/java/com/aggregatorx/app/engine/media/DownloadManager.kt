@@ -137,7 +137,7 @@ class DownloadManager @Inject constructor(
                     // Try with headless browser fallback on retry
                     if (retryCount == 2) {
                         try {
-                            val headlessUrls = HeadlessBrowserHelper.extractVideoUrls(pageUrl)
+                            val headlessUrls = videoExtractor.extractVideoUrls(pageUrl)
                             if (headlessUrls.isNotEmpty()) {
                                 val bestUrl = headlessUrls.first() // Already sorted by quality
                                 startDownload(

@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "com.shielded.aggregatorx"
+    namespace = "com.aggregatorx.app"
     compileSdk = 35
 
     defaultConfig {
